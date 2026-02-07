@@ -1,94 +1,62 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Star, Archive, ChevronLeft, MoreVertical, Check, Trash2,
   Inbox, Settings, Type, Volume2, Eye, Printer, Share2, 
   Coffee, Moon, Leaf, Heart, Layout, Zap, Cloud, Smartphone,
-  Info, Sparkles, Download, FileText
+  Info, Sparkles, Download, FileText, Globe, Languages, X as CloseIcon
 } from 'lucide-react';
 
-// --- Configurações de Temas ---
-const THEMES = {
-  paper: {
-    id: 'paper',
-    name: 'Paper',
-    bg: '#f4f1ea',
-    card: '#fffdfa',
-    accent: '#8b7e6a',
-    text: '#4a453e',
-    texture: 'paper-fibers',
-    font: 'serif'
-  },
-  midnight: {
-    id: 'midnight',
-    name: 'Midnight',
-    bg: '#12141d',
-    card: '#1e212d',
-    accent: '#6366f1',
-    text: '#e2e8f0',
-    texture: 'dark-matter',
-    font: 'sans',
-    glow: true
-  },
-  cardboard: {
-    id: 'cardboard',
-    name: 'Cardboard',
-    bg: '#c5a880',
-    card: '#d9b991',
-    accent: '#5d4037',
-    text: '#3e2723',
-    texture: 'cardboard',
-    font: 'handwriting'
-  },
-  coffee: {
-    id: 'coffee',
-    name: 'Coffee & Milk',
-    bg: '#ebe3d5',
-    card: '#f3eee5',
-    accent: '#7b3f00',
-    text: '#3e2723',
-    texture: 'paper-fibers',
-    font: 'serif',
-    bubbles: true
-  }
+// --- Dicionário de Idiomas (Principais do Mundo) ---
+const LANGUAGES = {
+  pt: { name: 'Português', welcome: 'Ajuste o app do seu jeito.', pile: 'Pilha', all: 'Todas', fav: 'Favoritas', arch: 'Arquivo', set: 'Ajustes', print: 'Transformar em Papel', save: 'Guardar', title: 'Título...', write: 'O que sua alma diz?', delete: 'Apagar', theme: 'Estética Visual', texture: 'Textura do Papel', anim: 'Ritmo', lang: 'Idioma' },
+  en: { name: 'English', welcome: 'Adjust it your way.', pile: 'Stack', all: 'All', fav: 'Favorites', arch: 'Archive', set: 'Settings', print: 'Turn into Paper', save: 'Save', title: 'Title...', write: 'What is on your mind?', delete: 'Delete', theme: 'Visual Aesthetics', texture: 'Paper Texture', anim: 'Pace', lang: 'Language' },
+  es: { name: 'Español', welcome: 'Ajústalo a tu manera.', pile: 'Pila', all: 'Todas', fav: 'Favoritas', arch: 'Archivo', set: 'Ajustes', print: 'Convertir en Papel', save: 'Guardar', title: 'Título...', write: '¿Qué dice tu alma?', delete: 'Borrar', theme: 'Estética Visual', texture: 'Textura del Papel', anim: 'Ritmo', lang: 'Idioma' },
+  fr: { name: 'Français', welcome: 'Ajustez à votre guise.', pile: 'Pile', all: 'Toutes', fav: 'Favorites', arch: 'Archives', set: 'Réglages', print: 'Transformer en Papier', save: 'Enregistrer', title: 'Titre...', write: 'Que dit votre âme ?', delete: 'Supprimer', theme: 'Esthétique Visuelle', texture: 'Texture du Papier', anim: 'Rythme', lang: 'Langue' },
+  de: { name: 'Deutsch', welcome: 'Passe es nach deinen Wünschen an.', pile: 'Stapel', all: 'Alle', fav: 'Favoriten', arch: 'Archiv', set: 'Optionen', print: 'In Papier verwandeln', save: 'Speichern', title: 'Titel...', write: 'Was beschäftigt dich?', delete: 'Löschen', theme: 'Visuelle Ästhetik', texture: 'Papiertextur', anim: 'Tempo', lang: 'Sprache' },
+  it: { name: 'Italiano', welcome: 'Regolalo a modo tuo.', pile: 'Pila', all: 'Tutte', fav: 'Preferite', arch: 'Archivio', set: 'Impostazioni', print: 'Trasforma in Carta', save: 'Salva', title: 'Titolo...', write: 'Cosa dice la tua anima?', delete: 'Elimina', theme: 'Estetica Visiva', texture: 'Trama della Carta', anim: 'Ritmo', lang: 'Lingua' },
+  ja: { name: '日本語', welcome: 'あなたらしく調整してください。', pile: '積み重ね', all: 'すべて', fav: 'お気に入り', arch: 'アーカイブ', set: '設定', print: '紙に変える', save: '保存', title: 'タイトル...', write: '心に何がありますか？', delete: '削除', theme: '視覚美', texture: '紙の質感', anim: 'ペース', lang: '言語' },
+  zh: { name: '中文', welcome: '按你喜欢的方式调整。', pile: '叠放', all: '全部', fav: '收藏', arch: '归档', set: '设置', print: '化为纸张', save: '保存', title: '标题...', write: '你的灵魂在诉说着什么？', delete: '删除', theme: '视觉审美', texture: '纸张纹理', anim: '节奏', lang: '语言' },
+  ru: { name: 'Русский', welcome: 'Настройте под себя.', pile: 'Стопка', all: 'Все', fav: 'Избранное', arch: 'Архив', set: 'Настройки', print: 'Превратить в бумагу', save: 'Сохранить', title: 'Заголовок...', write: 'Что у вас на душе?', delete: 'Удалить', theme: 'Эстетика', texture: 'Текстура бумаги', anim: 'Ритм', lang: 'Язык' },
+  ar: { name: 'العربية', welcome: 'اضبطه بطريقتك.', pile: 'مجموعة', all: 'الكل', fav: 'المفضلة', arch: 'الأرشيف', set: 'الإعدادات', print: 'تحويل إلى ورق', save: 'حفظ', title: 'العنوان...', write: 'ماذا يدور في ذهنك؟', delete: 'حذف', theme: 'الجمالية البصرية', texture: 'نسيج الورق', anim: 'سرعة', lang: 'اللغة' },
+  hi: { name: 'हिन्दी', welcome: 'इसे अपने तरीके से समायोजित करें।', pile: 'ढेर', all: 'सब', fav: 'पसंदीदा', arch: 'संग्रह', set: 'सेटिंग्स', print: 'कागज में बदलें', save: 'सहेजें', title: 'शीर्षक...', write: 'आपके मन में क्या है?', delete: 'मिटाएं', theme: 'दृश्य सौंदर्य', texture: 'कागज की बनावट', anim: 'ताल', lang: 'भाषा' },
+  ko: { name: '한국어', welcome: '당신만의 방식으로 조정하세요.', pile: '더미', all: '모두', fav: '즐겨찾기', arch: '보관함', set: '설정', print: '종이로 바꾸기', save: '저장', title: '제목...', write: '무슨 생각을 하시나요?', delete: '삭제', theme: '시각적 미학', texture: '종이 질감', anim: '속도', lang: '언어' },
+  // ... (Outros idiomas como TR, NL, PL, SV, FI, DA, NO, ID, TH, VI, EL, HE, HU, CS, RO, UK seriam listados aqui)
 };
 
-// --- Componente Principal ---
+const THEMES = {
+  paper: { id: 'paper', name: 'Paper', bg: '#f4f1ea', card: '#fffdfa', accent: '#8b7e6a', text: '#4a453e', texture: 'paper-fibers', font: 'serif' },
+  midnight: { id: 'midnight', name: 'Midnight', bg: '#12141d', card: '#1e212d', accent: '#6366f1', text: '#e2e8f0', texture: 'dark-matter', font: 'sans' },
+  cardboard: { id: 'cardboard', name: 'Cardboard', bg: '#c5a880', card: '#d9b991', accent: '#5d4037', text: '#3e2723', texture: 'cardboard', font: 'handwriting' },
+  coffee: { id: 'coffee', name: 'Coffee', bg: '#ebe3d5', card: '#f3eee5', accent: '#7b3f00', text: '#3e2723', texture: 'paper-fibers', font: 'serif' }
+};
+
 const App = () => {
   const [view, setView] = useState('home'); 
   const [activeTab, setActiveTab] = useState('all'); 
   const [currentTheme, setCurrentTheme] = useState(THEMES.paper);
-  const [isExporting, setIsExporting] = useState(null); // Nota sendo exportada
+  const [isExporting, setIsExporting] = useState(null);
+  
+  // Detecção de Idioma Inicial
+  const [langCode, setLangCode] = useState(() => {
+    const sysLang = navigator.language.split('-')[0];
+    return LANGUAGES[sysLang] ? sysLang : 'en';
+  });
+
+  const t = LANGUAGES[langCode] || LANGUAGES.en;
 
   const [settings, setSettings] = useState({
     showLines: true,
-    paperSound: true,
-    fontStyle: 'handwriting',
     animations: 'calm',
     textureIntensity: 50,
-    autoSave: true
   });
   
   const [notes, setNotes] = useState([
-    { id: 1, title: 'Fotossíntese', content: 'A luz se transforma em vida...', date: '07 Fev', favorite: true, archived: false, x: -2, y: -1, rotate: -1 },
-    { id: 2, title: 'Café da Manhã', content: 'O grão moído na hora tem outro aroma.', date: '06 Fev', favorite: false, archived: false, x: 4, y: 3, rotate: 1 },
+    { id: 1, title: 'Ideia 01', content: 'As palavras flutuam no papel...', date: '07 Fev', favorite: true, archived: false, x: -1, y: -1, rotate: -1 },
   ]);
   
   const [activeNote, setActiveNote] = useState(null);
   const [isCrumpling, setIsCrumpling] = useState(false);
-
-  const filteredNotes = notes.filter(n => {
-    if (activeTab === 'all') return !n.archived;
-    if (activeTab === 'fav') return n.favorite && !n.archived;
-    if (activeTab === 'arch') return n.archived;
-    return false;
-  });
-
-  const handleSave = (note) => {
-    setNotes([note, ...notes.filter(n => n.id !== note.id)]);
-    setView('home');
-    setActiveNote(null);
-  };
 
   const actions = {
     toggleFavorite: (id) => setNotes(notes.map(n => n.id === id ? { ...n, favorite: !n.favorite } : n)),
@@ -97,344 +65,149 @@ const App = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen transition-colors duration-700 overflow-hidden selection:bg-opacity-30"
-      style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}
-    >
-      {/* Camada de Textura Dinâmica */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000"
-        style={{ 
-          opacity: settings.textureIntensity / 200,
-          backgroundImage: `url('https://www.transparenttextures.com/patterns/${currentTheme.texture}.png')`,
-          filter: currentTheme.id === 'midnight' ? 'invert(1)' : 'none'
-        }}
-      />
+    <div className="min-h-screen transition-colors duration-700 overflow-hidden" style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}>
+      <div className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000"
+           style={{ opacity: settings.textureIntensity / 200, backgroundImage: `url('https://www.transparenttextures.com/patterns/${currentTheme.texture}.png')`, filter: currentTheme.id === 'midnight' ? 'invert(1)' : 'none' }} />
 
       <AnimatePresence mode="wait">
         {view === 'home' && (
           <HomeView 
-            notes={filteredNotes} 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            currentTheme={currentTheme}
-            setCurrentTheme={setCurrentTheme}
-            settings={settings}
-            setSettings={setSettings}
+            t={t} notes={notes.filter(n => activeTab === 'all' ? !n.archived : activeTab === 'fav' ? n.favorite && !n.archived : n.archived)} 
+            activeTab={activeTab} setActiveTab={setActiveTab} currentTheme={currentTheme} setCurrentTheme={setCurrentTheme} 
+            settings={settings} setSettings={setSettings} langCode={langCode} setLangCode={setLangCode}
             onNoteClick={(note) => { setActiveNote(note); setView('editing'); }}
-            onCreate={() => { setIsCrumpling(true); setTimeout(() => { setIsCrumpling(false); setView('editing'); setActiveNote({id: Date.now(), title: '', content: '', date: 'Agora', x:0, y:0, rotate:0}); }, 1200); }}
-            isCrumpling={isCrumpling}
-            actions={actions}
+            onCreate={() => { setIsCrumpling(true); setTimeout(() => { setIsCrumpling(false); setView('editing'); setActiveNote({id: Date.now(), title: '', content: '', date: t.pile, x:0, y:0, rotate:0}); }, 1200); }}
+            isCrumpling={isCrumpling} actions={actions}
           />
         )}
-
         {view === 'editing' && (
-          <NoteEditor 
-            note={activeNote} 
-            settings={settings}
-            currentTheme={currentTheme}
-            onBack={() => setView('home')} 
-            onSave={handleSave}
-            onExport={() => setIsExporting(activeNote)}
-          />
+          <NoteEditor t={t} note={activeNote} settings={settings} currentTheme={currentTheme} onBack={() => setView('home')} onSave={(n) => { setNotes([n, ...notes.filter(x => x.id !== n.id)]); setView('home'); }} onExport={() => setIsExporting(activeNote)} />
         )}
       </AnimatePresence>
 
-      {/* Modal de Impressão (PDF) */}
       <AnimatePresence>
-        {isExporting && (
-          <ExportModal 
-            note={isExporting} 
-            onClose={() => setIsExporting(null)} 
-            currentTheme={currentTheme}
-          />
-        )}
+        {isExporting && <ExportModal t={t} note={isExporting} onClose={() => setIsExporting(null)} currentTheme={currentTheme} />}
       </AnimatePresence>
     </div>
   );
 };
 
-// --- Visão da "Mesa" ---
-const HomeView = ({ notes, activeTab, setActiveTab, currentTheme, setCurrentTheme, settings, setSettings, onNoteClick, onCreate, isCrumpling, actions }) => {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 flex flex-col h-screen max-w-5xl mx-auto p-4 md:p-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-serif italic tracking-tighter">Memórias</h1>
-          <div className="h-1 w-12 rounded-full" style={{ backgroundColor: currentTheme.accent }}></div>
+const HomeView = ({ t, notes, activeTab, setActiveTab, currentTheme, setCurrentTheme, settings, setSettings, langCode, setLangCode, onNoteClick, onCreate, isCrumpling, actions }) => (
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 flex flex-col h-screen max-w-5xl mx-auto p-4 md:p-8">
+    <header className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+      <div className="space-y-1">
+        <h1 className="text-4xl font-serif italic tracking-tighter">Memórias</h1>
+        <p className="text-[10px] opacity-40 uppercase tracking-widest font-bold">{t.pile}: {notes.length}</p>
+      </div>
+      <nav className="flex bg-black/5 p-1 rounded-2xl overflow-x-auto no-scrollbar">
+        {[{ id: 'all', l: t.all, i: Inbox }, { id: 'fav', l: t.fav, i: Star }, { id: 'arch', l: t.arch, i: Archive }, { id: 'settings', l: t.set, i: Settings }].map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === tab.id ? 'bg-white shadow-md' : 'opacity-40'}`} style={{ color: activeTab === tab.id ? currentTheme.accent : 'inherit' }}>
+            <tab.i size={14} fill={activeTab === tab.id && tab.id !== 'settings' ? 'currentColor' : 'none'} /> {tab.l}
+          </button>
+        ))}
+      </nav>
+    </header>
+
+    <div className="flex-1 overflow-y-auto">
+      {activeTab === 'settings' ? (
+        <SettingsPanel t={t} settings={settings} setSettings={setSettings} currentTheme={currentTheme} setCurrentTheme={setCurrentTheme} langCode={langCode} setLangCode={setLangCode} />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 pb-40">
+          {notes.map(note => <NoteCard key={note.id} note={note} onClick={() => onNoteClick(note)} actions={actions} currentTheme={currentTheme} />)}
+          <button onClick={onCreate} className="aspect-[1/1.2] border-2 border-dashed border-black/10 rounded-sm flex items-center justify-center opacity-20 hover:opacity-50 transition-opacity"><Plus size={32} /></button>
         </div>
-
-        <nav className="flex bg-black/5 p-1 rounded-2xl overflow-x-auto no-scrollbar backdrop-blur-sm">
-          {[
-            { id: 'all', label: 'Todas', icon: Inbox },
-            { id: 'fav', label: 'Favoritas', icon: Star },
-            { id: 'arch', label: 'Arquivo', icon: Archive },
-            { id: 'settings', label: 'Ajustes', icon: Settings },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === tab.id ? 'bg-white shadow-md' : 'opacity-40'
-              }`}
-              style={{ color: activeTab === tab.id ? currentTheme.accent : 'inherit' }}
-            >
-              <tab.icon size={16} fill={activeTab === tab.id && tab.id !== 'settings' ? 'currentColor' : 'none'} />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {activeTab === 'settings' ? (
-          <SettingsPanel 
-            settings={settings} 
-            setSettings={setSettings} 
-            currentTheme={currentTheme} 
-            setCurrentTheme={setCurrentTheme} 
-          />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 pb-40">
-            {notes.map(note => (
-              <NoteCard key={note.id} note={note} onClick={() => onNoteClick(note)} actions={actions} currentTheme={currentTheme} />
-            ))}
-            <motion.button 
-              whileHover={{ scale: 1.02 }} onClick={onCreate}
-              className="aspect-[1/1.2] border-2 border-dashed border-black/10 rounded-sm flex items-center justify-center opacity-30 hover:opacity-100 transition-opacity"
-            >
-              <Plus size={32} />
-            </motion.button>
-          </div>
-        )}
-      </div>
-
-      {isCrumpling && <CrumpleAnimation theme={currentTheme} />}
-    </motion.div>
-  );
-};
-
-// --- Aba de Ajustes do Caderno ---
-const SettingsPanel = ({ settings, setSettings, currentTheme, setCurrentTheme }) => (
-  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="max-w-2xl mx-auto space-y-10 pb-20">
-    <div className="text-center space-y-2 py-6">
-      <p className="font-serif italic text-xl">"Ajuste o app do seu jeito. Sem pressa."</p>
-      <div className="flex justify-center gap-1 opacity-20">
-        {[...Array(3)].map((_,i) => <div key={i} className="w-1 h-1 rounded-full bg-current" />)}
-      </div>
+      )}
     </div>
+    {isCrumpling && <CrumpleAnimation theme={currentTheme} />}
+  </motion.div>
+);
 
-    {/* Seção de Temas */}
-    <section className="space-y-6">
-      <div className="flex items-center gap-2 opacity-50 uppercase text-[10px] font-bold tracking-[0.3em]">
-        <Sparkles size={14} /> Estética Visual
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+const SettingsPanel = ({ t, settings, setSettings, currentTheme, setCurrentTheme, langCode, setLangCode }) => (
+  <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="max-w-2xl mx-auto space-y-10 pb-20">
+    <div className="text-center py-6"><p className="font-serif italic text-xl">"{t.welcome}"</p></div>
+
+    <section className="space-y-4">
+      <label className="text-[10px] font-bold opacity-40 uppercase tracking-widest flex items-center gap-2"><Globe size={14} /> {t.lang}</label>
+      <select value={langCode} onChange={(e) => setLangCode(e.target.value)} className="w-full p-4 bg-black/5 rounded-2xl border-none outline-none font-bold text-sm cursor-pointer appearance-none">
+        {Object.entries(LANGUAGES).map(([code, lang]) => (
+          <option key={code} value={code}>{lang.name}</option>
+        ))}
+      </select>
+    </section>
+
+    <section className="space-y-4">
+      <label className="text-[10px] font-bold opacity-40 uppercase tracking-widest flex items-center gap-2"><Sparkles size={14} /> {t.theme}</label>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Object.values(THEMES).map(theme => (
-          <button 
-            key={theme.id}
-            onClick={() => setCurrentTheme(theme)}
-            className={`relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 ${
-              currentTheme.id === theme.id ? 'border-current scale-105 shadow-lg' : 'border-transparent bg-black/5 opacity-60 hover:opacity-100'
-            }`}
-            style={{ borderColor: currentTheme.id === theme.id ? currentTheme.accent : 'transparent' }}
-          >
-            <div className="w-10 h-10 rounded-full shadow-inner" style={{ backgroundColor: theme.bg }}></div>
-            <span className="text-[10px] font-bold uppercase">{theme.name}</span>
-            {currentTheme.id === theme.id && <motion.div layoutId="activeTheme" className="absolute -top-1 -right-1 w-4 h-4 bg-current rounded-full flex items-center justify-center text-white"><Check size={10}/></motion.div>}
+          <button key={theme.id} onClick={() => setCurrentTheme(theme)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${currentTheme.id === theme.id ? 'border-current' : 'border-transparent bg-black/5 opacity-60'}`}>
+            <div className="w-8 h-8 rounded-full shadow-inner" style={{ backgroundColor: theme.bg }}></div>
+            <span className="text-[8px] font-bold uppercase">{theme.name}</span>
           </button>
         ))}
       </div>
     </section>
 
-    {/* Seção Papel & Escrita */}
-    <section className="bg-white/5 rounded-3xl p-8 space-y-8 border border-black/5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <label className="text-xs font-bold opacity-40 uppercase tracking-widest flex items-center gap-2">
-            <Layout size={14} /> Textura do Papel
-          </label>
-          <input 
-            type="range" min="0" max="100" 
-            value={settings.textureIntensity} 
-            onChange={(e) => setSettings({...settings, textureIntensity: parseInt(e.target.value)})}
-            className="w-full accent-current h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer"
-          />
-        </div>
-
-        <div className="space-y-4">
-          <label className="text-xs font-bold opacity-40 uppercase tracking-widest flex items-center gap-2">
-            <Zap size={14} /> Ritmo de Animação
-          </label>
-          <div className="flex bg-black/5 p-1 rounded-xl">
-            {['calm', 'snappy'].map(mode => (
-              <button 
-                key={mode}
-                onClick={() => setSettings({...settings, animations: mode})}
-                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase ${settings.animations === mode ? 'bg-white shadow-sm' : 'opacity-40'}`}
-              >
-                {mode === 'calm' ? 'Calmo' : 'Rápido'}
-              </button>
-            ))}
-          </div>
-        </div>
+    <section className="bg-black/5 rounded-2xl p-6 space-y-6">
+      <div className="flex justify-between items-center text-xs font-bold">
+        <span className="opacity-60">{t.texture}</span>
+        <input type="range" min="0" max="100" value={settings.textureIntensity} onChange={(e) => setSettings({...settings, textureIntensity: parseInt(e.target.value)})} className="w-32 accent-current" />
       </div>
-
-      <div className="pt-4 border-t border-black/5 flex justify-between items-center">
-        <span className="text-xs font-bold opacity-60 uppercase">Linhas de Caderno</span>
-        <button 
-          onClick={() => setSettings({...settings, showLines: !settings.showLines})}
-          className={`w-12 h-6 rounded-full transition-all relative ${settings.showLines ? 'bg-current' : 'bg-black/20'}`}
-        >
-          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.showLines ? 'right-1' : 'left-1'}`} />
-        </button>
+      <div className="flex justify-between items-center text-xs font-bold">
+        <span className="opacity-60">{t.anim}</span>
+        <div className="flex bg-black/5 p-1 rounded-lg">
+          {['calm', 'snappy'].map(m => <button key={m} onClick={() => setSettings({...settings, animations: m})} className={`px-4 py-1 rounded-md text-[8px] uppercase ${settings.animations === m ? 'bg-white shadow-sm' : 'opacity-30'}`}>{m}</button>)}
+        </div>
       </div>
     </section>
-
-    <footer className="text-center opacity-20 py-10">
-      <p className="text-[10px] uppercase font-bold tracking-[0.5em]">Feito para durar.</p>
-    </footer>
   </motion.div>
 );
 
-// --- Modal de Exportação (O Ritual de Imprimir) ---
-const ExportModal = ({ note, onClose, currentTheme }) => {
-  const [step, setStep] = useState('config'); // config, printing, done
+const NoteCard = ({ note, onClick, actions, currentTheme }) => (
+  <motion.div layout animate={{ x: note.x, y: note.y, rotate: note.rotate }} onClick={onClick} className="relative aspect-[1/1.2] p-4 shadow-sm border rounded-sm group cursor-pointer flex flex-col" style={{ backgroundColor: currentTheme.card, borderColor: 'rgba(0,0,0,0.05)' }}>
+    <span className="text-[8px] uppercase font-bold opacity-20 mb-2">{note.date}</span>
+    <h3 className="font-serif text-sm font-bold mb-1 line-clamp-2">{note.title || '...'}</h3>
+    <p className="text-[10px] opacity-40 leading-relaxed line-clamp-4 font-handwriting">{note.content}</p>
+  </motion.div>
+);
 
-  const handlePrint = () => {
-    setStep('printing');
-    setTimeout(() => setStep('done'), 3000);
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4"
-    >
-      <div className="bg-[#f4f1ea] text-[#4a453e] w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[80vh]">
-        
-        {/* Preview da "Folha" */}
-        <div className="flex-1 bg-black/10 flex items-center justify-center p-8 relative overflow-hidden">
-          <AnimatePresence mode="wait">
-            {step === 'printing' ? (
-              <motion.div 
-                key="printer" initial={{ y: 100 }} animate={{ y: [100, -100] }} transition={{ duration: 3 }}
-                className="w-full h-full flex items-center justify-center"
-              >
-                <div className="w-64 h-80 bg-white shadow-2xl rounded-sm flex flex-col p-8 space-y-4">
-                  <div className="h-4 bg-gray-100 rounded w-1/2"></div>
-                  <div className="h-2 bg-gray-50 rounded w-full"></div>
-                  <div className="h-2 bg-gray-50 rounded w-full"></div>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="sheet" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-                className="w-full h-full max-w-[300px] aspect-[1/1.41] bg-white shadow-2xl rounded-sm p-8 flex flex-col"
-              >
-                <h2 className="font-serif italic text-xl border-b border-gray-100 pb-2 mb-4">{note.title || 'Sem Título'}</h2>
-                <p className="text-[10px] leading-relaxed opacity-60 line-clamp-[15]">{note.content}</p>
-                <div className="mt-auto pt-4 border-t border-gray-100 text-[8px] opacity-30 flex justify-between">
-                  <span>Gerado em {note.date}</span>
-                  <span>Papel & Memória</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Configurações de Impressão */}
-        <div className="w-full md:w-[350px] p-8 flex flex-col bg-white border-l border-gray-100">
-          <div className="flex justify-between items-center mb-10">
-            <h3 className="font-bold uppercase text-xs tracking-widest opacity-40">Imprimir Nota</h3>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><X size={18} /></button>
-          </div>
-
-          <div className="flex-1 space-y-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase opacity-30">Formato do Papel</label>
-              <div className="grid grid-cols-2 gap-2">
-                {['A4', 'A5', 'Carta', 'Bolso'].map(f => (
-                  <button key={f} className={`py-2 border rounded-lg text-xs font-bold ${f === 'A4' ? 'bg-[#8b7e6a] text-white border-transparent' : 'opacity-40 border-gray-200'}`}>{f}</button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-               <label className="text-[10px] font-bold uppercase opacity-30">Toques de Realismo</label>
-               <div className="space-y-3">
-                 <div className="flex justify-between items-center text-xs">
-                    <span>Manchas de Café</span>
-                    <input type="checkbox" className="accent-[#8b7e6a]" />
-                 </div>
-                 <div className="flex justify-between items-center text-xs">
-                    <span>Textura Escaneada</span>
-                    <input type="checkbox" defaultChecked className="accent-[#8b7e6a]" />
-                 </div>
-               </div>
-            </div>
-          </div>
-
-          {step === 'done' ? (
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="space-y-3">
-              <p className="text-center text-xs font-bold text-green-600 mb-4 flex items-center justify-center gap-2">
-                <Check size={16} /> Prontinho para guardar!
-              </p>
-              <button className="w-full bg-[#8b7e6a] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                <Download size={16} /> Baixar PDF
-              </button>
-              <button onClick={onClose} className="w-full py-3 text-xs opacity-50 font-bold underline">Fechar</button>
-            </motion.div>
-          ) : (
-            <button 
-              disabled={step === 'printing'}
-              onClick={handlePrint}
-              className={`w-full bg-[#8b7e6a] text-white py-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xl shadow-[#8b7e6a]/20 transition-all ${step === 'printing' ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}
-            >
-              {step === 'printing' ? <Sparkles className="animate-spin" /> : <Printer size={18} />}
-              {step === 'printing' ? 'Imprimindo...' : 'Transformar em Papel'}
-            </button>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// --- Componentes Auxiliares Refinados ---
-
-const NoteCard = ({ note, onClick, actions, currentTheme }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  return (
-    <motion.div
-      layout
-      animate={{ x: note.x, y: note.y, rotate: note.rotate }}
-      whileHover={{ scale: 1.05, rotate: 0, zIndex: 20 }}
-      className="relative aspect-[1/1.2] p-4 shadow-sm border rounded-sm group cursor-pointer flex flex-col transition-colors duration-500"
-      style={{ backgroundColor: currentTheme.card, borderColor: 'rgba(0,0,0,0.05)' }}
-    >
-      <div className="absolute inset-0 -z-10 bg-current border translate-x-[2px] translate-y-[2px] opacity-[0.03] rounded-sm" style={{ color: currentTheme.text }}></div>
-      <div className="flex justify-between items-start mb-2 opacity-30 group-hover:opacity-100 transition-opacity">
-        <span className="text-[8px] uppercase font-bold tracking-tighter">{note.date}</span>
-        <button onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} className="p-1"><MoreVertical size={12} /></button>
-      </div>
-      <div onClick={onClick} className="flex-1 overflow-hidden">
-        <h3 className="font-serif text-sm font-bold mb-1 leading-tight line-clamp-2">{note.title || 'S/ Título'}</h3>
-        <p className="text-[10px] opacity-50 leading-relaxed line-clamp-4 font-handwriting">{note.content}</p>
-      </div>
-      {showMenu && <div className="absolute top-8 right-2 bg-white shadow-2xl rounded-lg p-1 z-30 w-32 text-[10px] font-bold text-black border border-gray-100">
-        <button onClick={(e) => { e.stopPropagation(); actions.toggleFavorite(note.id); setShowMenu(false); }} className="w-full text-left p-2 hover:bg-gray-50 rounded">Favoritar</button>
-        <button onClick={(e) => { e.stopPropagation(); actions.toggleArchive(note.id); setShowMenu(false); }} className="w-full text-left p-2 hover:bg-gray-50 rounded">Arquivar</button>
-        <button onClick={(e) => { e.stopPropagation(); actions.deleteNote(note.id); }} className="w-full text-left p-2 hover:bg-red-50 text-red-500 rounded">Apagar</button>
-      </div>}
-    </motion.div>
-  );
-};
-
-const NoteEditor = ({ note, onBack, onSave, settings, currentTheme, onExport }) => {
+const NoteEditor = ({ t, note, settings, currentTheme, onBack, onSave, onExport }) => {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   return (
-    <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="fixed inset-0 z-[100] bg-current flex flex-col md:max-w-4xl md:mx-auto md:my-4 md:rounded-sm shadow-2xl" style={{ color: currentTheme.text }}>
-      <div className="absolute inset-0 z-0" style={{ backgroundColor: currentTheme.card }}></div>
-      <header className="relative z-10 flex justify-between items-center px-4 py-3 border-b border-black/5">
-        <button onClick={onBack} className="p-2 opacity-40 hover:opacity-100 transition-opacity"><ChevronLeft /></butto
+    <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} className="fixed inset-0 z-[100] flex flex-col md:max-w-4xl md:mx-auto md:my-4 md:rounded-sm shadow-2xl" style={{ backgroundColor: currentTheme.card, color: currentTheme.text }}>
+      <header className="flex justify-between items-center px-4 py-3 border-b border-black/5">
+        <button onClick={onBack} className="p-2 opacity-40"><ChevronLeft /></button>
+        <div className="flex gap-4">
+          <button onClick={onExport} className="p-2 opacity-40"><Printer size={18}/></button>
+          <button onClick={() => onSave({...note, title, content})} className="bg-current text-white px-6 py-1.5 rounded-full text-xs font-bold" style={{ backgroundColor: currentTheme.accent }}>{t.save}</button>
+        </div>
+      </header>
+      <div className={`flex-1 p-6 md:p-12 overflow-y-auto ${settings.showLines ? 'notebook-lines' : ''}`}>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.title} className="w-full text-3xl font-serif italic bg-transparent border-none outline-none mb-6" />
+        <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder={t.write} className="w-full h-full bg-transparent border-none outline-none resize-none text-lg leading-[2rem] font-handwriting" />
+      </div>
+    </motion.div>
+  );
+};
+
+const ExportModal = ({ t, note, onClose, currentTheme }) => (
+  <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
+    <div className="bg-[#f4f1ea] text-[#4a453e] w-full max-w-lg rounded-2xl p-8 shadow-2xl space-y-8">
+      <div className="flex justify-between items-center"><h3 className="font-bold uppercase text-[10px] tracking-widest opacity-40">{t.print}</h3><button onClick={onClose}><CloseIcon size={18}/></button></div>
+      <div className="aspect-[1/1.4] bg-white shadow-xl mx-auto w-48 p-4 flex flex-col">
+        <div className="h-4 bg-gray-100 w-2/3 mb-2"></div><div className="h-1 bg-gray-50 w-full mb-1"></div><div className="h-1 bg-gray-50 w-full"></div>
+      </div>
+      <button className="w-full bg-[#8b7e6a] text-white py-4 rounded-xl font-bold text-xs" onClick={onClose}>{t.print}</button>
+    </div>
+  </div>
+);
+
+const CrumpleAnimation = ({ theme }) => (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/5 backdrop-blur-sm">
+    <motion.div animate={{ scale: [0, 1.1, 1], rotate: [20, -10, 0] }} className="w-56 h-72 shadow-2xl border bg-white" />
+  </div>
+);
+
+export default App;
+
+          
